@@ -1,0 +1,60 @@
+# For more info on HTTP files go to https://aka.ms/vs/httpfile
+### Variables
+@baseUrl = http://localhost:5132
+@contentType = application/json
+
+### Get All Events (Default Pagination)
+GET {{baseUrl}}/api/events?top=20&skip=0
+Content-Type: {{contentType}}
+
+###
+
+### Get Events (Custom Pagination - First 5)
+GET {{baseUrl}}/api/events?top=5&skip=0
+Content-Type: {{contentType}}
+
+###
+
+### Get Events (Custom Pagination - Next 5)
+GET {{baseUrl}}/api/events?top=5&skip=5
+Content-Type: {{contentType}}
+
+###
+
+### Create New Event (Valid)
+POST {{baseUrl}}/api/events
+Content-Type: {{contentType}}
+
+{
+  "title": "Test Event from API",
+  "description": "This is a test event created via the API",
+  "startDate": "2025-10-24T14:00:00Z",
+  "endDate": "2025-10-24T15:00:00Z"
+}
+
+###
+
+### Create Event (Invalid - Missing Title)
+POST {{baseUrl}}/api/events
+Content-Type: {{contentType}}
+
+{
+  "description": "Missing title",
+  "startDate": "2025-10-24T14:00:00Z",
+  "endDate": "2025-10-24T15:00:00Z"
+}
+
+###
+
+### Create Event (Invalid - End Before Start)
+POST {{baseUrl}}/api/events
+Content-Type: {{contentType}}
+
+{
+  "title": "Invalid Date Range",
+  "description": "End date is before start date",
+  "startDate": "2025-10-24T15:00:00Z",
+  "endDate": "2025-10-24T14:00:00Z"
+}
+
+###
