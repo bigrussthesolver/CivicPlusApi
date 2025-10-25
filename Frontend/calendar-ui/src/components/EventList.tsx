@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { CalendarEvent } from "../types/models";
 import { EventCard } from "./EventCard";
 
@@ -6,23 +7,53 @@ interface EventListProps {
   loading: boolean;
   error: string | null;
   total: number;
+  hasMore: boolean;
   onRefresh: () => void;
+  onLoadMore: () => void;
 }
 
 /**
- * Component to display a list of calendar events
+ * Component to display a list of calendar events with infinite scroll
  */
 export const EventList: React.FC<EventListProps> = ({
   events,
   loading,
   error,
   total,
+  hasMore,
   onRefresh,
+  onLoadMore,
 }) => {
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  //  for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // when visible and we have more to load
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1 } // set to10% visible
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loading, onLoadMore]);
+
   /**
    * Renders loading state
    */
-  if (loading) {
+  if (loading && events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -132,6 +163,37 @@ export const EventList: React.FC<EventListProps> = ({
           <EventCard key={event.id} event={event} />
         ))}
       </div>
+
+      {/* Loading indicator for infinite scroll */}
+      {loading && events.length > 0 && (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="ml-3 text-gray-600">Loading more events...</p>
+        </div>
+      )}
+
+      {/*  invisible  element target*/}
+      <div ref={observerTarget} className="h-4" />
+
+      {/* End of list message */}
+      {!hasMore && events.length > 0 && (
+        <div className="text-center py-8 text-gray-500 text-sm">
+          <svg
+            className="mx-auto h-8 w-8 text-gray-400 mb-2"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          You've reached the end! All {total} events loaded.
+        </div>
+      )}
     </div>
   );
 };

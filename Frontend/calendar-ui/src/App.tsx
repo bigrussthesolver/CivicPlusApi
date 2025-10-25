@@ -11,9 +11,18 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Use custom hook for event management
-  const { events, total, loading, error, refetch, createEvent, clearError } =
-    useEvents(20, 0);
+  // Use custom hook for event management with infinite scroll
+  const { 
+    events, 
+    total, 
+    loading, 
+    error, 
+    hasMore,
+    loadMore,
+    refetch, 
+    createEvent, 
+    clearError 
+  } = useEvents(20); // load 20 events per page
 
   /**
    * Handles event creation from the form
@@ -124,7 +133,9 @@ function App() {
               loading={loading}
               error={error}
               total={total}
+              hasMore={hasMore}
               onRefresh={refetch}
+              onLoadMore={loadMore}
             />
           </div>
         </div>
