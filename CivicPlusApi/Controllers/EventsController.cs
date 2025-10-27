@@ -32,8 +32,10 @@ namespace CivicPlusApi.Controllers
         [ProducesResponseType(typeof(EventListResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetEvents(
-            [FromQuery] int top = 20,
-            [FromQuery] int skip = 0)
+            //[FromQuery] int top = 20,
+            //[FromQuery] int skip = 0)
+            [FromQuery(Name = "$top")] int top = 20,
+            [FromQuery(Name = "$skip")] int skip = 0)
         {
             try
             {

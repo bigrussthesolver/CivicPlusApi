@@ -27,9 +27,10 @@ export const useEvents = (pageSize: number = 20): UseEventsReturn => {
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState<number>(0);
     const [hasMore, setHasMore] = useState<boolean>(true);
-    
+
     // keep track of whether we're currently loading to prevent duplicate requests
     const isLoadingRef = useRef(false);
+    const pageRef = useRef(0);
 
     /**
      * read events from my API
@@ -37,7 +38,7 @@ export const useEvents = (pageSize: number = 20): UseEventsReturn => {
     const fetchEvents = useCallback(async (pageNum: number, append: boolean = false) => {
         // don't load if we're already loading
         if (isLoadingRef.current) return;
-        
+
         try {
             isLoadingRef.current = true;
             setLoading(true);
@@ -47,18 +48,23 @@ export const useEvents = (pageSize: number = 20): UseEventsReturn => {
             const response: EventListResponse = await eventService.getAllEvents(pageSize, skip);
 
             if (append) {
-                // add new events to my existing ones
-                setEvents(prev => [...prev, ...response.items]);
+                // add new events to my existing ones, filtering out duplicates
+                setEvents(prev => {
+                    const existingIds = new Set(prev.map(e => e.id));
+                    const newEvents = response.items.filter(e => !existingIds.has(e.id));
+                    return [...prev, ...newEvents];
+                });
             } else {
                 // replace all my events (for refresh)
                 setEvents(response.items);
             }
-            
+
             setTotal(response.total);
-            
-            // check if there are more events to load
-            const totalLoaded = append ? events.length + response.items.length : response.items.length;
-            setHasMore(totalLoaded < response.total);
+
+            // check if there are more events to load based on page calculation
+            const totalLoaded = (pageNum + 1) * pageSize;
+            const hasMoreEvents = totalLoaded < response.total;
+            setHasMore(hasMoreEvents);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to fetch events';
             setError(errorMessage);
@@ -67,23 +73,27 @@ export const useEvents = (pageSize: number = 20): UseEventsReturn => {
             setLoading(false);
             isLoadingRef.current = false;
         }
-    }, [pageSize, events.length]);
+    }, [pageSize]);
 
     /**
      * load the next page of events
      */
     const loadMore = useCallback(async () => {
-        if (!hasMore || isLoadingRef.current) return;
-        
-        const nextPage = page + 1;
+        if (!hasMore || isLoadingRef.current) {
+            return;
+        }
+
+        const nextPage = pageRef.current + 1;
+        pageRef.current = nextPage;
         setPage(nextPage);
         await fetchEvents(nextPage, true);
-    }, [page, hasMore, fetchEvents]);
+    }, [hasMore, fetchEvents]);
 
     /**
      * refresh from the beginning
      */
     const refetch = useCallback(async () => {
+        pageRef.current = 0;
         setPage(0);
         setHasMore(true);
         await fetchEvents(0, false);
@@ -119,6 +129,7 @@ export const useEvents = (pageSize: number = 20): UseEventsReturn => {
     // load initial events
     useEffect(() => {
         fetchEvents(0, false);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return {
