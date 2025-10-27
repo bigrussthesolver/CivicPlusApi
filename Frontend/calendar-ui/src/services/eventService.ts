@@ -53,7 +53,7 @@ class EventService {
     async getAllEvents(top: number = 20, skip: number = 0): Promise<EventListResponse> {
         try {
             const response = await this.api.get<EventListResponse>(
-                `/api/Events?$top=${top}&$skip=${skip}`
+                `/api/Events?top=${top}&skip=${skip}`
             );
             return response.data;
         } catch (error) {
